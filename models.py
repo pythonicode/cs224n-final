@@ -1,3 +1,5 @@
+import sys
+sys.path.append('./input/tez-lib')
 import tez
 import wandb
 import torch
@@ -7,12 +9,11 @@ from sklearn import metrics
 from transformers import AutoModel, AdamW, get_cosine_schedule_with_warmup
 
 class BigLongBirdFormer(tez.Model):
-    def __init__(self, longformer_path, bigbird_path, num_labels, n_steps, train=False):
+    def __init__(self, longformer_path, bigbird_path, num_labels, n_steps):
         super().__init__()
         self.longformer = AutoModel.from_pretrained(longformer_path)
         self.bigbird = AutoModel.from_pretrained(bigbird_path)
         self.output = nn.Linear(self.longformer.config.hidden_size +  self.bigbird.config.hidden_size, num_labels)
-        self.training = train
         self.n_steps = n_steps
         self.num_labels = num_labels
 
@@ -56,7 +57,7 @@ class BigLongBirdFormer(tez.Model):
         sequence_output = torch.cat((longformer_out.last_hidden_state, bigbird_out.last_hidden_state), dim=2)
         logits = self.output(sequence_output)
         logits = torch.permute(logits, (0, 2, 1))
-        loss = nn.CrossEntropyLoss()(logits, labels) if self.training else 0
+        loss = nn.CrossEntropyLoss()(logits, labels)
         wandb.log({"loss": loss})
-        metrics = self.monitor_metrics(logits[:, :, 0], labels[:, 0]) if self.training else 0
-        return logits, loss, metrics
+        # metrics = self.monitor_metrics(logits[:, :, 0], labels[:, 0]) if labels is not None else None
+        return logits, loss, {}

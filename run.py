@@ -28,7 +28,7 @@ if __name__ == "__main__":
     # SETUP REQUIRED OBJECTS
     if args.model == 'biglongbirdformer':
         tokenizer = LongformerTokenizerFast.from_pretrained(LONGFORMER_PATH)
-        model = BigLongBirdFormer(LONGFORMER_PATH, BIGBIRD_PATH, 15, len(train_df)/args.batch, train=True)
+        model = BigLongBirdFormer(LONGFORMER_PATH, BIGBIRD_PATH, 15, (len(train_df)/args.batch * args.epochs))
         dataset = FeedbackDataset(train_df, tokenizer, max_length=1024, csv=train_csv)
         collate = Collate(tokenizer)
 
@@ -44,5 +44,6 @@ if __name__ == "__main__":
             valid_dataset=valid_set,
             valid_bs=args.batch,
             valid_collate_fn=collate,
+            epochs=args.epochs
         )
         model.save('./output/model.bin')
