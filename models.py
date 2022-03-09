@@ -1,5 +1,6 @@
 import sys
 sys.path.append('./input/tez-lib')
+import numpy as np
 import tez
 import wandb
 import torch
@@ -22,10 +23,11 @@ class BigLongBirdFormer(tez.Model):
     def monitor_metrics(self, logits, labels):
         if logits is None:
             return {}
-        logits = torch.sigmoid(logits).cpu().detach().numpy() >= 0.8
-        labels = F.one_hot(labels, num_classes=self.num_labels).cpu().detach().numpy()
-        print(logits.shape, labels.shape)
-        accuracy = metrics.accuracy_score(labels, logits)
+        logits = torch.argmax(logits, axis=1).cpu().detach().numpy()
+        labels = labels.cpu().detach().numpy()
+        accuracy = 0
+        for i in range(logits.shape[0]):
+            accuracy += metrics.accuracy_score(labels[i], logits[i])
         wandb.log({ "accuracy": accuracy })
         return { "accuracy": accuracy }
     
@@ -44,5 +46,5 @@ class BigLongBirdFormer(tez.Model):
         logits = torch.permute(logits, (0, 2, 1))
         loss = nn.CrossEntropyLoss()(logits, labels)
         wandb.log({"loss": loss})
-        # metrics = self.monitor_metrics(logits[:, :, 0], labels[:, 0]) if labels is not None else None
-        return logits, loss, {}
+        metrics = self.monitor_metrics(logits, labels) if labels is not None else None
+        return logits, loss, metrics

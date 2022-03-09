@@ -34,7 +34,7 @@ if __name__ == "__main__":
 
     if args.train:
         train_set, valid_set = train_test_split(dataset, test_size=0.1, shuffle=True)
-        print(f"{DEVICE} | Train: {len(train_set)} | Validation: {len(valid_set)}")
+        print(f"{DEVICE} | Train: {len(train_set)} | Validation: {len(valid_set)} | Batch Size {args.batch} | Epochs {args.epochs}")
         model.fit(
             device=DEVICE,
             train_dataset=train_set,
