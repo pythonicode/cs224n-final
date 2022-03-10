@@ -2,15 +2,18 @@ import torch
 from torch.utils.data.dataset import Dataset
 
 class MaskingDataset(Dataset):
-    def __init__(self, data, tokenizer):
+    def __init__(self, data, tokenizer, max_length):
         self.data = data
         self.tokenizer = tokenizer
+        self.max_length = max_length
         
     def __len__(self):
         return len(self.data)
     
     def __getitem__(self, idx):
-        pass
+        text = self.data['text'][idx]
+        output = self.tokenizer(text, padding='max_length', truncation=True, max_length=self.max_length, return_tensors='pt')
+        return output
 
 class FeedbackDataset(Dataset):
     def __init__(self, data, tokenizer, max_length, csv):

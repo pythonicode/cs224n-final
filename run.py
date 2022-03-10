@@ -9,7 +9,7 @@ import wandb
 
 
 parser = ArgumentParser()
-parser.add_argument('--train', action='store_true')
+parser.add_argument('--mode', choices=['train', 'pretrain'])
 parser.add_argument('--model', choices=['biglongbirdformer', 'longformer'])
 parser.add_argument('--batch', type=int, default=2)
 parser.add_argument('--epochs', type=int, default=5)
@@ -32,7 +32,7 @@ if __name__ == "__main__":
         dataset = FeedbackDataset(train_df, tokenizer, max_length=1024, csv=train_csv)
         collate = Collate(tokenizer)
 
-    if args.train:
+    if args.mode == 'train':
         train_set, valid_set = train_test_split(dataset, test_size=0.1, shuffle=True)
         print(f"{DEVICE} | Train: {len(train_set)} | Validation: {len(valid_set)} | Batch Size {args.batch} | Epochs {args.epochs}")
         model.fit(
