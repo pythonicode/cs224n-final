@@ -58,7 +58,7 @@ class FeedbackDataset(Dataset):
 
 ### THIS COLLATE FUNCTION MUST BE USED WITH ABOVE DATASET TO ENSURE PROPER FORMATTING
 
-class Collate:
+class FeedbackCollate:
     def __init__(self, tokenizer):
         self.tokenizer = tokenizer
 

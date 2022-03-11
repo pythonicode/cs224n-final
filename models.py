@@ -37,7 +37,6 @@ class BigLongBirdFormer(tez.Model):
     def fetch_optimizer(self):
         params = [param[1] for param in self.named_parameters()]
         adam = optimizers.AdamW(params, lr=3e-5)
-        print(adam.state_dict())
         return adam
 
     def forward(self, input_ids, attention_mask, labels=None):

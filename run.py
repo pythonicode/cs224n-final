@@ -10,7 +10,7 @@ import wandb
 
 parser = ArgumentParser()
 parser.add_argument('--mode', choices=['train', 'pretrain'])
-parser.add_argument('--model', choices=['biglongbirdformer', 'longformer'])
+parser.add_argument('--model', choices=['biglongbirdformer', 'longformer'], default='biglongbirdformer')
 parser.add_argument('--batch', type=int, default=2)
 parser.add_argument('--epochs', type=int, default=5)
 args = parser.parse_args()
@@ -25,14 +25,13 @@ if __name__ == "__main__":
     train_csv = pd.read_csv('./input/feedback-prize-2021/train.csv')
     train_df = pd.read_parquet('./input/parquets/train_all.parquet', engine='pyarrow')
 
-    # SETUP REQUIRED OBJECTS
+    tokenizer = LongformerTokenizerFast.from_pretrained(LONGFORMER_PATH)
     if args.model == 'biglongbirdformer':
-        tokenizer = LongformerTokenizerFast.from_pretrained(LONGFORMER_PATH)
         model = BigLongBirdFormer(LONGFORMER_PATH, BIGBIRD_PATH, 15, (len(train_df)/args.batch * args.epochs))
-        dataset = FeedbackDataset(train_df, tokenizer, max_length=1024, csv=train_csv)
-        collate = Collate(tokenizer)
-
+        
     if args.mode == 'train':
+        dataset = FeedbackDataset(train_df, tokenizer, max_length=1024, csv=train_csv)
+        collate = FeedbackCollate(tokenizer)
         train_set, valid_set = train_test_split(dataset, test_size=0.1, shuffle=True)
         print(f"{DEVICE} | Train: {len(train_set)} | Validation: {len(valid_set)} | Batch Size {args.batch} | Epochs {args.epochs}")
         model.fit(
