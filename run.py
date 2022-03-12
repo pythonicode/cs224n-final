@@ -3,7 +3,7 @@ import torch
 from argparse import ArgumentParser
 from models import *
 from datasets import *
-from transformers import LongformerTokenizerFast
+from transformers import LongformerTokenizerFast, DataCollatorForLanguageModeling, LongformerForMaskedLM, Trainer, TrainingArguments
 from sklearn.model_selection import train_test_split
 import wandb
 
@@ -46,3 +46,10 @@ if __name__ == "__main__":
             epochs=args.epochs
         )
         model.save('./output/model.bin')
+    
+    if args.mode == 'pretrain':
+        model = LongformerForMaskedLM.from_pretrained(LONGFORMER_PATH)
+        dataset = MaskingDataset(train_df)
+        collate = DataCollatorForLanguageModeling(tokenizer)
+        training_args = TrainingArguments(output_dir='./output')
+        trainer = Trainer(model, training_args, collate, train_dataset=dataset)

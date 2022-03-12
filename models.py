@@ -10,6 +10,43 @@ import torch.optim as optimizers
 from sklearn import metrics
 from transformers import AutoModel, get_cosine_schedule_with_warmup
 
+class Longformer(tez.Model):
+    def __init__(self, longformer_path, num_labels, n_steps):
+        super().__init__()
+        self.longformer = AutoModel.from_pretrained(longformer_path)
+        self.output_drop = nn.Dropout(p=0.2)
+        self.output = nn.Linear(self.longformer.config.hidden_size, num_labels)
+        self.num_labels = num_labels
+        self.n_steps = n_steps
+
+    def monitor_metrics(self, logits, labels):
+        if logits is None:
+            return {}
+        logits = torch.argmax(logits, axis=1).cpu().detach().numpy()
+        labels = labels.cpu().detach().numpy()
+        accuracy = 0
+        for i in range(logits.shape[0]):
+            accuracy += metrics.accuracy_score(labels[i], logits[i])
+        wandb.log({ "accuracy": accuracy })
+        return { "accuracy": accuracy }
+    
+    def fetch_scheduler(self):
+        return get_cosine_schedule_with_warmup(self.optimizer, num_warmup_steps=0, num_training_steps=self.n_steps)
+    
+    def fetch_optimizer(self):
+        params = [param[1] for param in self.named_parameters()]
+        adam = optimizers.AdamW(params, lr=3e-5)
+        return adam
+
+    def forward(self, input_ids, attention_mask, labels=None):
+        longformer_out = self.longformer(input_ids, attention_mask)
+        logits = self.output(self.output_drop(longformer_out.last_hidden_state))
+        logits = torch.permute(logits, (0, 2, 1))
+        loss = nn.CrossEntropyLoss()(logits, labels)
+        wandb.log({"loss": loss})
+        metrics = self.monitor_metrics(logits, labels) if labels is not None else None
+        return logits, loss, metrics
+
 class BigLongBirdFormer(tez.Model):
     def __init__(self, longformer_path, bigbird_path, num_labels, n_steps):
         super().__init__()
