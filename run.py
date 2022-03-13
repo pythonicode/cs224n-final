@@ -6,6 +6,7 @@ from datasets import *
 from transformers import LongformerTokenizerFast, DataCollatorForLanguageModeling, LongformerForMaskedLM, Trainer, TrainingArguments
 from sklearn.model_selection import train_test_split
 import wandb
+import os
 
 
 parser = ArgumentParser()
@@ -24,6 +25,14 @@ if __name__ == "__main__":
     # READ TRAINING DATA
     train_csv = pd.read_csv('./input/feedback-prize-2021/train.csv')
     train_df = pd.read_parquet('./input/parquets/train_all.parquet', engine='pyarrow')
+
+    essays = []
+    for path in os.listdir('./input/argumentative_essays'):
+        with open(path) as f:
+            if path.endswith('.txt'):
+                essays.append(f.read())
+    
+    pretrain_df = pd.DataFrame(essays, columns=['text'])
 
     tokenizer = LongformerTokenizerFast.from_pretrained(LONGFORMER_PATH)
     if args.model == 'biglongbirdformer':
@@ -49,7 +58,7 @@ if __name__ == "__main__":
     
     if args.mode == 'pretrain':
         model = LongformerForMaskedLM.from_pretrained(LONGFORMER_PATH)
-        dataset = MaskingDataset(train_df)
+        dataset = MaskingDataset(pretrain_df)
         collate = DataCollatorForLanguageModeling(tokenizer)
         training_args = TrainingArguments(output_dir='./output')
         trainer = Trainer(model, training_args, collate, train_dataset=dataset)
